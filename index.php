@@ -47,6 +47,28 @@ if(isset($_POST['action'])){
                 
             }
         break;
+
+        case 'upload':
+        if(isset($_POST['url'])){
+             $url = $_POST['url'];
+            preg_match_all('/[^\/]*$/', $url, $filename);
+           // var_dump($url);
+            //var_dump($filename);
+            if(isset($filename)) {
+                $filename = $filename[0][0];
+                }else{
+                    $filename = '';
+                }
+            if(strlen($filename)==0) $filename=microtime(true);
+                $ch = curl_init($url);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                $data = curl_exec($ch);
+                curl_close($ch);
+                file_put_contents($_POST['folder'].'/'.$filename, $data);
+        
+        }
+        break;
+           
 	}
 }
  $root = $_SERVER['DOCUMENT_ROOT'];
@@ -94,6 +116,14 @@ if(isset($_POST['action'])){
                     <input type="submit" class="btn btn-success " value="new dir">
                     </form>
                     </div>
+         <div class="fluid-row">
+                    <form width="200" action="/index.php?folder=<?=$curent_folder?>" method="POST">
+                    <input type="hidden" name="action" value="upload">
+                    <input type="hidden" name="folder" value="<?=$abs_path?>">
+                    <input type="text" name="url" placeholder="URL">
+                    <input type="submit" class="btn btn-primary " value="Upload">
+                    </form>
+                    </div>
     </div>
     <table class="table">
     	<tbody>
@@ -121,7 +151,7 @@ if(isset($_POST['action'])){
                     </div>'
                 );
     	?> 
-    	<tr><td style="max-width: 60%;">
+    	<tr><td >
     	<?php
     	$is_dir = is_dir($abs_path.'/'.$file);
     	
