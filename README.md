@@ -1,0 +1,1 @@
+Basic HTML5 viewer of files on PC for my mobile devices. Using nginx + php-cgi + 7zip on Win machine.
