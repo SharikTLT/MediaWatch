@@ -13,6 +13,40 @@ if(isset($_POST['action'])){
 		$cmd = '7z x "'.$_POST['file'].'" -o"'.$_POST['folder'].'/'.$filename.'" -y  ';
 		$answer = shell_exec($cmd);
 		break;
+
+        case 'rename':
+            $oldname = $_POST['file'];
+            $newname = $_POST['folder'].'/'.$_POST['newname'];
+            rename($oldname,$newname);
+        break;
+        case 'makedir':
+            mkdir($_POST['folder'].'/'.$_POST['foldername']);
+        break;
+        case 'delete':
+            try{ 
+
+                if(is_dir($_POST['file'])){
+                   function deleteDirectory($dir) { 
+    if (!file_exists($dir)) return true; 
+    if (!is_dir($dir) || is_link($dir)) return unlink($dir); 
+        foreach (scandir($dir) as $item) { 
+            if ($item == '.' || $item == '..') continue; 
+            if (!deleteDirectory($dir . "/" . $item)) { 
+                chmod($dir . "/" . $item, 0777); 
+                if (!deleteDirectory($dir . "/" . $item)) return false; 
+            }; 
+        } 
+        return rmdir($dir); 
+    } 
+                    deleteDirectory($_POST['file']);
+                }else{
+                    unlink($_POST['file']);
+                }
+                
+            }catch(Exception $e){
+                
+            }
+        break;
 	}
 }
  $root = $_SERVER['DOCUMENT_ROOT'];
@@ -52,13 +86,42 @@ if(isset($_POST['action'])){
 	<div class="masthead">
         <h3 class="muted">MediaWatch</h3>
         <h4> <?=$render_path?></h4>
+        <div class="fluid-row">
+                    <form width="200" action="/index.php?folder=<?=$curent_folder?>" method="POST">
+                    <input type="hidden" name="action" value="makedir">
+                    <input type="hidden" name="folder" value="<?=$abs_path?>">
+                    <input type="text" name="foldername" placeholder="Folder name">
+                    <input type="submit" class="btn btn-success " value="new dir">
+                    </form>
+                    </div>
     </div>
     <table class="table">
     	<tbody>
     <?php
     foreach($files as $file){
+         $actions = array(
+                'rename'=> '
+                    <div class="fluid-row">
+                    <form width="200" action="/index.php?folder='.$curent_folder.'" method="POST">
+                    <input type="hidden" name="action" value="rename">
+                    <input type="hidden" name="file" value="'.$abs_path.'\\'.$file.'">
+                    <input type="hidden" name="folder" value="'.$abs_path.'">
+                    <input type="text" name="newname" value="'.$file.'">
+                    <input type="submit" class="btn btn-success " value="rename">
+                    </form>
+                    </div>
+                    ',
+                'delete'=> '<div class="fluid-row">
+                    <form width="200" action="/index.php?folder='.$curent_folder.'" method="POST">
+                    <input type="hidden" name="action" value="delete">
+                    <input type="hidden" name="file" value="'.$abs_path.'\\'.$file.'">
+                    <input type="hidden" name="folder" value="'.$abs_path.'">
+                    <input type="submit" class="btn btn-danger " value="delete">
+                    </form>
+                    </div>'
+                );
     	?> 
-    	<tr><td width="100%">
+    	<tr><td style="max-width: 60%;">
     	<?php
     	$is_dir = is_dir($abs_path.'/'.$file);
     	
@@ -80,8 +143,9 @@ if(isset($_POST['action'])){
     	}
     	if(substr($folder_url,0,1)!='\\')$folder_url = '\\'.$folder_url;
     		?>
-    	<a class="btn" href="index.php?folder=<?php echo urlencode($folder_url);?>"><i class="icon-hdd"></i> <?=$file?></a>
-    	<br>
+    	<a class="btn" style="max-width:400px;" href="index.php?folder=<?php echo urlencode($folder_url);?>"><i class="icon-hdd"></i> <?=$file?></a>
+    	 </td><td>
+         <?php  if($file !='<i class="icon-arrow-up"></i> up') echo implode('',$actions); ?>
     	<?php
     	}else{
     		$url_path = $curent_folder.'/'.$file;
@@ -103,6 +167,8 @@ if(isset($_POST['action'])){
     		if(in_array($ext, $videos)) $file_type = 'video';
     		if(in_array($ext, $music)) $file_type = 'music';
     		if(in_array($ext, $archive)) $file_type = 'archive';
+            $addon = null;
+                    $action = null;
     		switch($file_type){
     			case 'image': 
     				$icon = 'icon-camera"'; 
@@ -114,27 +180,39 @@ if(isset($_POST['action'])){
     			break;
     			case 'music': $icon = 'icon-music"'; break;
     			case 'archive': $icon = 'icon-briefcase';
-    				$addon = '
+    				$action = '
     				<form width="200" action="/index.php?folder='.$curent_folder.'" method="POST">
     				<input type="hidden" name="action" value="unzip">
     				<input type="hidden" name="file" value="'.$abs_path.'\\'.$file.'">
     				<input type="hidden" name="folder" value="'.$abs_path.'">
     				<input type="submit" class="btn btn-info " value="unzip">
     				</form>
-
-
-    				<?php';
+                    ';
     			break;
     			default: 
     				$icon = 'icon-ban-circle';
     				$addon = null;
+                    $action = null;
     			break;
     		}
-
+           
+            if($action!=null){
+                $action.=implode(' ',$actions);
+            }else{
+                 $action=implode(' ',$actions);
+            }
     		?>
-    	<a class="btn btn-warning" href="<?php echo $url_path;?>"><i class="<?=$icon?>"></i><?=$file?> - <?=$file_type?></a>
+    	<a class="btn btn-warning" href="<?php echo $url_path;?>"><i class="<?=$icon?>"></i><?=$file?> - <?=$file_type?> - DD</a>
+    </td>
+    <td>
     	<?php
-    		if($addon !=null) echo '<br>'.$addon;
+            if($action != null) echo $action;
+
+    		if($addon !=null){
+                echo '</td></tr><tr colspan="2"><td>'.$addon;
+            }else{
+                echo ' ';
+            }
     	}
     	?> 
     </td></tr>
